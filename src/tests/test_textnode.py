@@ -10,28 +10,28 @@ class TestTextNode(unittest.TestCase):
         self.assertEqual(node, node2)
 
     def test_url_eq(self):
-        node = TextNode("Text", TextType.PLAIN, url="Test URL")
-        node2 = TextNode("Text", TextType.PLAIN, url="Test URL")
+        node = TextNode("Text", TextType.TEXT, url="Test URL")
+        node2 = TextNode("Text", TextType.TEXT, url="Test URL")
         self.assertEqual(node, node2)
 
     def test_url_none_eq(self):
-        node = TextNode("Text", TextType.PLAIN, url=None)
-        node2 = TextNode("Text", TextType.PLAIN)
+        node = TextNode("Text", TextType.TEXT, url=None)
+        node2 = TextNode("Text", TextType.TEXT)
         self.assertEqual(node, node2)
 
     def test_text_different(self):
-        node = TextNode("Text", TextType.PLAIN)
-        node2 = TextNode("Different text", TextType.PLAIN)
+        node = TextNode("Text", TextType.TEXT)
+        node2 = TextNode("Different text", TextType.TEXT)
         self.assertNotEqual(node, node2)
 
     def test_type_different(self):
-        node = TextNode("Text", TextType.PLAIN)
+        node = TextNode("Text", TextType.TEXT)
         node2 = TextNode("Text", TextType.LINK)
         self.assertNotEqual(node, node2)
 
     def test_url_different(self):
-        node = TextNode("Text", TextType.PLAIN, url="Test URL")
-        node2 = TextNode("Text", TextType.PLAIN, url="Different test URL")
+        node = TextNode("Text", TextType.TEXT, url="Test URL")
+        node2 = TextNode("Text", TextType.TEXT, url="Different test URL")
         self.assertNotEqual(node, node2)
 
 
