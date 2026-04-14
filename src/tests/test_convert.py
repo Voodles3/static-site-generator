@@ -1,7 +1,13 @@
 import unittest
 
+from src.nodes.blocknode import BlockType
 from src.nodes.textnode import TextNode, TextType
-from src.nodes.utils.convert import text_node_to_html_node, text_to_textnodes
+from src.nodes.utils.convert import (
+    block_to_block_type,
+    markdown_to_blocks,
+    text_node_to_html_node,
+    text_to_textnodes,
+)
 
 
 class TestConvert(unittest.TestCase):
@@ -63,3 +69,132 @@ class TestConvert(unittest.TestCase):
                 TextNode("link", TextType.LINK, "https://boot.dev"),
             ],
         )
+
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_markdown_to_blocks_with_gap(self):
+        md = """
+This is **bolded** paragraph
+
+
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_block_to_block_type_heading(self):
+        expected = {
+            "# Heading": BlockType.HEADING,
+            "## Heading": BlockType.HEADING,
+            "### Heading": BlockType.HEADING,
+            "#### Heading": BlockType.HEADING,
+            "##### Heading": BlockType.HEADING,
+            "###### Heading": BlockType.HEADING,
+            "## ## Heading": BlockType.HEADING,
+            "####### NOT Heading": BlockType.PARAGRAPH,
+            "#NOT Heading": BlockType.PARAGRAPH,
+            "NOT Heading": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
+
+    def test_block_to_block_type_code(self):
+        expected = {
+            "```\nCode```": BlockType.CODE,
+            "```\nCode\n```": BlockType.CODE,
+            "```\nCode\n\n```": BlockType.CODE,
+            "```\n\nCode\n```": BlockType.CODE,
+            "```\nCode\nMore Code\nStill Code\n\n\n```": BlockType.CODE,
+            "```\n```": BlockType.CODE,
+            "NOT Code": BlockType.PARAGRAPH,
+            "\n```NOT Code```": BlockType.PARAGRAPH,
+            "`NOT Code`": BlockType.PARAGRAPH,
+            "``````": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
+
+    def test_block_to_block_type_quote(self):
+        expected = {
+            "> Quote": BlockType.QUOTE,
+            "> Quote\n> More Quote": BlockType.QUOTE,
+            "> Quote\nMore Quote": BlockType.QUOTE,
+            "NOT Quote": BlockType.PARAGRAPH,
+            " > NOT Quote": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
+
+    def test_block_to_block_type_unordered_list(self):
+        expected = {
+            "- List Item": BlockType.UNORDERED_LIST,
+            "- List Item\n- More List Item": BlockType.UNORDERED_LIST,
+            "- List Item\n- More List Item\n- Last List Item": BlockType.UNORDERED_LIST,
+            "NOT List Item": BlockType.PARAGRAPH,
+            "-NOT List Item": BlockType.PARAGRAPH,
+            "- List Item\nNOT List Item": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
+
+    def test_block_to_block_type_ordered_list(self):
+        expected = {
+            "1. List Item": BlockType.ORDERED_LIST,
+            "1. List Item\n2. More List Item": BlockType.ORDERED_LIST,
+            "1. List Item\n2. More List Item\n3. Last List Item": BlockType.ORDERED_LIST,
+            "NOT List Item": BlockType.PARAGRAPH,
+            "1.NOT List Item": BlockType.PARAGRAPH,
+            "2. NOT List Item": BlockType.PARAGRAPH,
+            "1. List Item\n3. NOT List Item": BlockType.PARAGRAPH,
+            "1. List Item\nNOT List Item": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
+
+    def test_block_to_block_type_paragraph(self):
+        expected = {
+            "Paragraph": BlockType.PARAGRAPH,
+            "Paragraph\nMore Paragraph": BlockType.PARAGRAPH,
+            "This is **bold** text": BlockType.PARAGRAPH,
+            "This is _italic_ text": BlockType.PARAGRAPH,
+            "This is `code` text": BlockType.PARAGRAPH,
+        }
+        actual = {case: block_to_block_type(case) for case in expected}
+
+        self.assertEqual(expected, actual)
