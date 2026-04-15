@@ -1,4 +1,5 @@
 import re
+from typing import Literal
 
 from src.nodes.blocknode import BlockType
 from src.nodes.htmlnode import HTMLNode
@@ -90,7 +91,7 @@ def _is_ordered_list_block(block):
     return True
 
 
-def markdown_to_html_node(markdown) -> ParentNode:
+def markdown_to_html_node(markdown: str) -> ParentNode:
 
     blocks = markdown_to_blocks(markdown)
     block_nodes: list[HTMLNode] = []
@@ -98,31 +99,64 @@ def markdown_to_html_node(markdown) -> ParentNode:
         block_type = block_to_block_type(block)
         match block_type:
             case BlockType.PARAGRAPH:
-                block = block.replace("\n", " ")
-                block_node = ParentNode(tag="p", children=[])
+                block_node = _get_paragraph_blocknode(block)
             case BlockType.HEADING:
-                header_num = specify_block_header_type(block)
-                block_node = ParentNode(tag=f"h{header_num}", children=[])
+                block_node = _get_heading_blocknode(block)
             case BlockType.CODE:
-                code_text_node = TextNode(text=block, text_type=TextType.CODE)
-                code_node = text_node_to_html_node(code_text_node)
-                parent_node = ParentNode(tag="code", children=[code_node])
-                block_node = ParentNode(tag="pre", children=[parent_node])
-                continue
+                block_node = _get_code_blocknode(block)
             case BlockType.QUOTE:
-                block_node = ParentNode(tag="blockquote", children=[])
+                block_node = _get_quote_blocknode(block)
             case BlockType.UNORDERED_LIST:
-                block_node = ParentNode(tag="ul", children=[])
+                block_node = _get_list_blocknode(block, "ul")
             case BlockType.ORDERED_LIST:
-                block_node = ParentNode(tag="ol", children=[])
-        assert isinstance(block_node.children, list)  # children will always be a list
-        block_node.children.extend(text_to_children(block))
+                block_node = _get_list_blocknode(block, "ol")
+
         block_nodes.append(block_node)
 
     div_node = ParentNode(tag="div", children=block_nodes)
     return div_node
 
 
+def _get_paragraph_blocknode(block: str) -> ParentNode:
+    block = block.replace("\n", " ")
+    return ParentNode(tag="p", children=text_to_children(block))
+
+
+def _get_heading_blocknode(block: str) -> ParentNode:
+    header_num = specify_block_header_type(block)
+    block = block[header_num + 1 :]
+    return ParentNode(tag=f"h{header_num}", children=text_to_children(block))
+
+
+def _get_code_blocknode(block: str) -> ParentNode:
+    block = block.removeprefix("```\n").removesuffix("```")
+    text_node = TextNode(text=block, text_type=TextType.TEXT)
+    code_node = text_node_to_html_node(text_node)
+    parent_node = ParentNode(tag="code", children=[code_node])
+    return ParentNode(tag="pre", children=[parent_node])
+
+
+def _get_quote_blocknode(block: str) -> ParentNode:
+    block = block.replace(">", "", 1)
+    return ParentNode(tag="blockquote", children=text_to_children(block))
+
+
+def _get_list_blocknode(block: str, tag: Literal["ul", "ol"]) -> ParentNode:
+    block_node = ParentNode(tag=tag, children=[])
+    block_node.children = []  # Without this, the .append() below errors due to possible nullness for some reason
+    for line in block.split("\n"):
+        if tag == "ul":
+            line = line[2:]
+        else:
+            line = re.sub(r"^\d+\.\s+", "", line, count=1)
+
+        block_node.children.append(
+            ParentNode(tag="li", children=text_to_children(line))
+        )
+    return block_node
+
+
 def text_to_children(text: str) -> list[HTMLNode]:
+
     text_nodes = text_to_textnodes(text)
     return [text_node_to_html_node(node) for node in text_nodes]
