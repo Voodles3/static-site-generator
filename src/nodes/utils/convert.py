@@ -30,7 +30,9 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode:
         case TextType.LINK:
             return LeafNode(tag="a", value=text, props={"href": text_node.url})
         case TextType.IMAGE:
-            return LeafNode(tag="img", value=text, props={"src": text_node.url, "alt": text})
+            return LeafNode(
+                tag="img", value=text, props={"src": text_node.url, "alt": text}
+            )
 
     raise RuntimeError("Unreachable code position")
 
@@ -137,8 +139,15 @@ def _get_code_blocknode(block: str) -> ParentNode:
 
 
 def _get_quote_blocknode(block: str) -> ParentNode:
-    block = block.replace(">", "", 1)
-    return ParentNode(tag="blockquote", children=text_to_children(block))
+    lines = block.split("\n")
+    new_lines = []
+    for line in lines:
+        if not line.startswith(">"):
+            raise ValueError("invalid quote block")
+        new_lines.append(line.lstrip(">").strip())
+    content = " ".join(new_lines)
+    children = text_to_children(content)
+    return ParentNode(tag="blockquote", children=children)
 
 
 def _get_list_blocknode(block: str, tag: Literal["ul", "ol"]) -> ParentNode:
