@@ -1,6 +1,10 @@
 import unittest
 
-from src.nodes.utils.extract import extract_markdown_images, extract_markdown_links
+from src.nodes.utils.extract import (
+    extract_markdown_images,
+    extract_markdown_links,
+    extract_title,
+)
 
 
 class TestExtract(unittest.TestCase):
@@ -39,3 +43,15 @@ class TestExtract(unittest.TestCase):
             ],
             matches,
         )
+
+    def test_extract_markdown_title(self):
+        match = extract_title(
+            "hello this is some text\nanother line\n## this is not the title\n# here's the title!\nanother random line"
+        )
+        self.assertEqual(match, "here's the title!")
+
+        match2 = extract_title(
+            "#   header is first this 358#(%865 ()time    \n extra stuff"
+        )
+
+        self.assertEqual(match2, "header is first this 358#(%865 ()time")

@@ -47,7 +47,8 @@ class TestConvert(unittest.TestCase):
         html_node = text_node_to_html_node(node)
         self.assertEqual(html_node.tag, "img")
         self.assertEqual(html_node.value, "Image node")
-        self.assertEqual(html_node.props, {"href": "image.jpg"})
+        self.assertEqual(html_node.props, {"src": "image.jpg", "alt": "Image node"})
+        self.assertEqual(html_node.to_html(), '<img src="image.jpg" alt="Image node">')
 
     def test_convert_text_to_textnodes(self):
         text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
